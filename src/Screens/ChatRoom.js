@@ -3,6 +3,7 @@ import {
   Text,
   View,
   TouchableOpacity,
+  Dimensions,
   ActivityIndicator,
 } from 'react-native';
 import Feather from 'react-native-vector-icons/Feather';
@@ -12,10 +13,12 @@ import DocumentPicker from 'react-native-document-picker';
 import firestore from '@react-native-firebase/firestore';
 import storage from '@react-native-firebase/storage';
 
+const {width} = Dimensions.get('window');
+
 const ChatRoom = ({user}) => {
   const [messages, setMessages] = useState([]);
   const [profile, setProfile] = useState('');
-  const [loading, setLoading] = useState(true); // State for loading indicator
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     firestore()
@@ -47,7 +50,7 @@ const ChatRoom = ({user}) => {
         };
       });
       setMessages(allMsg);
-      setLoading(false); // Turn off loading indicator when messages are loaded
+      setLoading(false);
     });
 
     return () => unsubscribe();
@@ -65,12 +68,50 @@ const ChatRoom = ({user}) => {
   };
 
   const onSendAttachment = async () => {
-    // Your code for sending attachments
+    try {
+      const res = await DocumentPicker.pick({
+        type: [DocumentPicker.types.allFiles],
+        copyTo: 'cachesDirectory',
+      });
+      console.log(res);
+      const imageUri = res[0].fileCopyUri;
+      const filename = imageUri.substring(imageUri.lastIndexOf('/') + 1);
+      const uploadUri = imageUri;
+
+      const task = storage().ref(filename).putFile(uploadUri);
+
+      try {
+        await task;
+      } catch (e) {
+        console.error(e);
+      }
+
+      const url = await storage().ref(filename).getDownloadURL();
+
+      const message = {
+        _id: Math.random().toString(36).substring(7),
+        image: url,
+        user: {
+          _id: user.uid,
+          name: profile.name,
+          avatar: profile.pic,
+        },
+        createdAt: new Date(),
+      };
+
+      await firestore().collection('group_chat').add(message);
+    } catch (err) {
+      if (DocumentPicker.isCancel(err)) {
+        console.log('User cancelled the picker');
+      } else {
+        console.log(err);
+      }
+    }
   };
 
   return (
     <View style={styles.chatContainer}>
-      {loading ? ( // Render activity indicator if loading is true
+      {loading ? (
         <ActivityIndicator size="large" color="#ECE5DD" />
       ) : (
         <GiftedChat
@@ -103,13 +144,14 @@ const ChatRoom = ({user}) => {
                   wrapperStyle={{
                     right: {
                       backgroundColor: '#DCF8C5',
-                      padding: 5,
+                      paddingHorizontal: 5,
+                      paddingTop: 3,
                       marginBottom: 5,
                     },
                     left: {
                       backgroundColor: '#FFFFFF',
                       paddingTop: 30,
-                      paddingRight: 15,
+                      paddingHorizontal: 5,
                       marginBottom: 5,
                     },
                   }}
@@ -127,7 +169,6 @@ const ChatRoom = ({user}) => {
                     },
                     left: {
                       color: 'grey',
-                      textAlign: 'top',
                     },
                   }}
                 />
@@ -136,7 +177,7 @@ const ChatRoom = ({user}) => {
           }}
           renderSend={props => {
             return (
-              <Send style={{borderTopWidth: 0}} {...props}>
+              <Send {...props}>
                 <Feather
                   name="send"
                   size={30}
@@ -149,13 +190,13 @@ const ChatRoom = ({user}) => {
           renderInputToolbar={props => (
             <InputToolbar {...props} containerStyle={styles.inputToolbar} />
           )}
-          // renderActions={() => (
-          //   <TouchableOpacity
-          //     style={styles.attachmentButton}
-          //     onPress={onSendAttachment}>
-          //     <Text style={styles.attachmentText}>Attach</Text>
-          //   </TouchableOpacity>
-          // )}
+          renderActions={() => (
+            <TouchableOpacity
+              style={styles.attachmentButton}
+              onPress={onSendAttachment}>
+              <Text style={styles.attachmentText}>Attach</Text>
+            </TouchableOpacity>
+          )}
         />
       )}
     </View>
@@ -172,10 +213,10 @@ const styles = StyleSheet.create({
     },
   },
   chatContainer: {
+    width: width,
     flex: 1,
     backgroundColor: '#ECE5DD',
     justifyContent: 'center',
-    alignItems: 'center',
   },
   attachmentButton: {
     backgroundColor: '#075E54',

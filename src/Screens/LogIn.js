@@ -1,28 +1,49 @@
+import React, {useState, useEffect} from 'react';
 import {
   StyleSheet,
   Text,
   View,
   Image,
-  Alert,
-  Dimensions,
+  TextInput,
   TouchableOpacity,
+  Animated,
+  Dimensions,
+  Alert,
+  ActivityIndicator,
 } from 'react-native';
-import React, {useState} from 'react';
-import {TextInput} from 'react-native-paper';
 import auth from '@react-native-firebase/auth';
-import {ActivityIndicator} from 'react-native';
-
-const {width, height} = Dimensions.get('window');
 
 const LogIn = ({navigation}) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const logoPosition = useState(new Animated.Value(height))[0];
+  const textPosition = useState(new Animated.Value(height))[0];
+  const inputsOpacity = useState(new Animated.Value(0))[0];
 
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(logoPosition, {
+        toValue: 0,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+      Animated.timing(textPosition, {
+        toValue: height * 0,
+        duration: 1000,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      Animated.timing(inputsOpacity, {
+        toValue: 1,
+        duration: 500,
+        useNativeDriver: true,
+      }).start();
+    });
+  }, []);
   if (loading) {
     return <ActivityIndicator size={'large'} color={'#075E54'} />;
   }
-
   const userLogIn = async () => {
     setLoading(true);
     if (!email || !password) {
@@ -36,29 +57,43 @@ const LogIn = ({navigation}) => {
     } catch (err) {
       Alert.alert('Attention!', 'Invalid Credentials!');
       setLoading(false);
+      navigation.navigate('LogIn');
     }
   };
 
   return (
-    <View>
-      <View style={styles.container}>
+    <View style={styles.container}>
+      <Animated.View
+        style={[
+          styles.logoContainer,
+          {transform: [{translateY: logoPosition}]},
+        ]}>
         <Text style={styles.text}>Welcome to WhatsApp</Text>
-        <Image style={styles.image} source={require('../Assets/logo.png')} />
-      </View>
-      <View>
+        <Animated.Image
+          style={[styles.image, {opacity: inputsOpacity}]}
+          source={require('../Assets/logo.png')}
+        />
+      </Animated.View>
+      <Animated.View
+        style={[
+          styles.inputContainer,
+          {opacity: inputsOpacity, transform: [{translateY: textPosition}]},
+        ]}>
         <TextInput
           label={'Email'}
-          mode="outlined"
+          placeholder="Your Email"
+          style={styles.input}
           onChangeText={text => setEmail(text)}
         />
         <TextInput
           label={'Password'}
-          mode="outlined"
+          placeholder="Your Password"
+          style={styles.input}
           onChangeText={text => setPassword(text)}
           secureTextEntry
         />
 
-        <TouchableOpacity style={styles.button} onPress={() => userLogIn()}>
+        <TouchableOpacity style={styles.button} onPress={userLogIn}>
           <Text style={styles.buttonText}>LOG IN </Text>
         </TouchableOpacity>
         <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
@@ -66,17 +101,28 @@ const LogIn = ({navigation}) => {
             Don't have an account? Sign Up!
           </Text>
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 };
 
 export default LogIn;
 
+const {width, height} = Dimensions.get('window');
+
 const styles = StyleSheet.create({
   container: {
+    flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  logoContainer: {
+    alignItems: 'center',
+  },
+  input: {
+    borderWidth: 0.5,
+    marginBottom: 10,
+    borderColor: '#075E54',
   },
   image: {
     alignSelf: 'center',
@@ -87,12 +133,16 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: '#075E54',
   },
+  inputContainer: {
+    width: '80%',
+    marginTop: 20,
+  },
   button: {
     alignSelf: 'center',
     backgroundColor: '#075E54',
     borderRadius: 10,
-    width: width - 20,
-    margin: 10,
+    width: '100%',
+    marginVertical: 10,
   },
   buttonText: {
     textAlign: 'center',
