@@ -1,6 +1,7 @@
 import React, {useState, useEffect} from 'react';
 import {View, Image, StyleSheet, TouchableOpacity, Text} from 'react-native';
 import firestore from '@react-native-firebase/firestore';
+import Feather from 'react-native-vector-icons/Feather';
 
 const Header = ({navigation, user, showBackButton}) => {
   const [profile, setProfile] = useState('');

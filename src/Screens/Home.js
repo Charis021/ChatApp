@@ -2,7 +2,7 @@ import {FlatList, StyleSheet, Text, Image, View} from 'react-native';
 import React, {useState, useEffect} from 'react';
 import firestore from '@react-native-firebase/firestore';
 import {TouchableOpacity} from 'react-native';
-import Header from '../Header';
+import Header from '../components/common/Header';
 
 const Home = ({user, navigation}) => {
   const [users, setUsers] = useState(null);
@@ -24,9 +24,17 @@ const Home = ({user, navigation}) => {
       <TouchableOpacity
         onPress={() => {
           if (item.name === 'ChatRoom') {
-            navigation.navigate('ChatRoom', {name: item.name, uid: item.uid});
+            navigation.navigate('ChatRoom', {
+              name: item.name,
+              uid: item.uid,
+              pic: item.pic,
+            });
           } else {
-            navigation.navigate('Chat', {name: item.name, uid: item.uid});
+            navigation.navigate('Chat', {
+              name: item.name,
+              uid: item.uid,
+              pic: item.pic,
+            });
           }
         }}>
         <View style={styles.container}>
